@@ -22,4 +22,15 @@ export namespace API {
 			}
 		);
 	}
+
+	export function getItems(ids: number[]) {
+		return got.get(
+			`https://api.guildwars2.com/v2/items?ids=${ids.join(',')}`,
+			{
+				json: true,
+				timeout: 15000,
+				retries: 1,
+			}
+		);
+	}
 }

@@ -4,7 +4,7 @@ export interface Stock {
 }
 
 export interface Item {
-	id: boolean;
+	id: number;
 	whitelisted: boolean;
 	buys: Stock;
 	sells: Stock;
