@@ -1,26 +1,26 @@
-import { batchRequest, sliceIds } from '../src/batchRequest';
+import {sliceIds} from '../src/batchRequest';
 
 test('sliceIds should split array into specified batches', () => {
-  let ids: number[] = [];
-  for (let i = 1; i <= 400; i++) {
-    ids.push(i);
-  }
+	let ids: number[] = [];
+	for (let i = 1; i <= 400; i++) {
+		ids.push(i);
+	}
 
-  let batchedIds: number[][] = sliceIds(ids);
+	let batchedIds: number[][] = sliceIds(ids);
 
-  let expectedFirstSlice: number[] = [];
-  for (let i = 1; i <= 200; i++) {
-    expectedFirstSlice.push(i);
-  }
+	let expectedFirstSlice: number[] = [];
+	for (let i = 1; i <= 200; i++) {
+		expectedFirstSlice.push(i);
+	}
 
-  let expectedSecondSlice: number[] = [];
-  for (let i = 201; i <= 400; i++) {
-    expectedSecondSlice.push(i);
-  }
+	let expectedSecondSlice: number[] = [];
+	for (let i = 201; i <= 400; i++) {
+		expectedSecondSlice.push(i);
+	}
 
-  expect(batchedIds[0]).toEqual(expectedFirstSlice);
-  expect(batchedIds[1]).toEqual(expectedSecondSlice);
-  expect(batchedIds).toEqual([expectedFirstSlice, expectedSecondSlice]);
+	expect(batchedIds[0]).toEqual(expectedFirstSlice);
+	expect(batchedIds[1]).toEqual(expectedSecondSlice);
+	expect(batchedIds).toEqual([expectedFirstSlice, expectedSecondSlice]);
 });
 
 test('sliceIds including trailing ids when batching - boundary low', () => {
@@ -46,7 +46,11 @@ test('sliceIds including trailing ids when batching - boundary low', () => {
 	expect(batchedIds[0]).toEqual(expectedFirstSlice);
 	expect(batchedIds[1]).toEqual(expectedSecondSlice);
 	expect(batchedIds[2]).toEqual(expectedThirdSlice);
-	expect(batchedIds).toEqual([expectedFirstSlice, expectedSecondSlice, expectedThirdSlice]);
+	expect(batchedIds).toEqual([
+		expectedFirstSlice,
+		expectedSecondSlice,
+		expectedThirdSlice,
+	]);
 });
 
 test('sliceIds including trailing ids when batching - boundary high', () => {

@@ -31,8 +31,12 @@
 		"watch:test": "jest --watch"
 	},
 	"dependencies": {
-		"got": "^7.1.0",
 		"@types/got": "^7.1.1",
+		"@types/log4js": "0.0.32",
+		"@types/mongoose": "^4.7.19",
+		"got": "^7.1.0",
+		"log4js": "^2.3.3",
+		"mongoose": "^4.11.6",
 		"serializer.ts": "0.0.12"
 	},
 	"devDependencies": {

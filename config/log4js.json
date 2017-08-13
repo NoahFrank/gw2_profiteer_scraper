@@ -1,0 +1,10 @@
+{
+	"appenders": {
+		"everything": { "type": "file", "filename": "log/all-the-logs.log" },
+		"emergencies": {  "type": "file", "filename": "log/oh-no-not-again.log" },
+		"just-errors": { "type": "logLevelFilter", "appender": "emergencies", "level": "error" }
+	},
+	"categories": {
+		"default": { "appenders": ["just-errors", "everything"], "level": "debug" }
+	}
+}

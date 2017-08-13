@@ -20,8 +20,8 @@ export function sliceIds(ids: number[]): number[][] {
 	return batchedIds;
 }
 
-export function batchRequest(ids: number[], apiRequest: () => void) {
-	if (ids.length > MAX_NUM_OF_IDS_PER_REQ) {
-		let batchedIds: number[][] = sliceIds(ids);
-	}
-}
+// export function batchRequest(ids: number[], apiRequest: Function) {
+// 	if (ids.length > MAX_NUM_OF_IDS_PER_REQ) {
+// 		let batchedIds: number[][] = sliceIds(ids);
+// 	}
+// }
