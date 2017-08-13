@@ -7,9 +7,6 @@ import {sliceIds} from './batchRequest'
 import {deserialize} from 'serializer.ts/Serializer';
 import {setupDatabase} from "./setupDatabase";
 
-import * as fs from 'fs';
-import * as got from 'got';
-
 // Logger
 import * as log4js from 'log4js'
 let log = log4js.getLogger("scraper");
@@ -21,7 +18,9 @@ export class Scraper {
 			let batchedIds: number[][] = sliceIds(parsedIds);
 			let allRequestPromises: Promise<void>[] = [];
 
-			for (let idGroup of batchedIds) {
+			for (let idGroup of batchedIds) { // Loop through each batched set of ids
+
+				// Get all current item listings
 				allRequestPromises.push(
 					API.getListings(idGroup).then(response => {
 						if (response.statusCode === 200) {

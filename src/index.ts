@@ -1,4 +1,3 @@
-import {storeItemList} from "./storeItemList";
 export * from './scraper';
 
 import {Scraper} from './scraper';

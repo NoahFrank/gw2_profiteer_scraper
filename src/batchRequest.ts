@@ -1,7 +1,3 @@
-import * as got from 'got';
-
-import {API} from './api';
-
 const MAX_NUM_OF_IDS_PER_REQ = 200;
 
 export function sliceIds(ids: number[]): number[][] {
@@ -19,9 +15,3 @@ export function sliceIds(ids: number[]): number[][] {
 
 	return batchedIds;
 }
-
-// export function batchRequest(ids: number[], apiRequest: Function) {
-// 	if (ids.length > MAX_NUM_OF_IDS_PER_REQ) {
-// 		let batchedIds: number[][] = sliceIds(ids);
-// 	}
-// }

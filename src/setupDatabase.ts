@@ -15,22 +15,22 @@ import ItemModel = require("./models/ItemSchema");
 let connect = mongoose.connect('mongodb://localhost/gw2-profiteer', {useMongoClient: true});
 
 export function setupDatabase(cb: Function) {
-	connect.then( () => {
+	connect.then( () => { // Wait for connection to database to be established
 		ItemModel.count({}, (error, count) => {
 			if (error) { // If counting Item documents fails
 				log.error(`Failed to count number of Item Documents in database\n${error}`);
 			}
 
-			// Load all the tradeable item ids into data
+			// Load all the tradeable item ids into data variable
 			let data: Buffer = null;
 			try {
 				data = fs.readFileSync('config/itemList.json');
-			} catch (e) {
-				log.error(`Failed to read config/itemList.json\n${e}`);
+			} catch (error) {
+				log.error(`Failed to read config/itemList.json\n${error}`);
 			}
 
-			if (count <= 0) { // If the database isn't already populated
-				if (data) { // make sure we read the data successfully
+			if (count <= 0) { // If the Item Collection isn't already populated
+				if (data) { // Make sure we have read the data successfully
 					let parsedData = JSON.parse(data.toString());
 
 					let batchedIds: number[][] = sliceIds(parsedData);
@@ -55,22 +55,22 @@ export function setupDatabase(cb: Function) {
 										level: item.level
 									});
 
-									newItem.save().catch( (error) => {
+									newItem.save( (error, newItem) => {
 										log.error(`Error saving item to the database\n${error}`);
 									});
 								}
 							} else {
 								// STATUS: 206 Partial Content "text": "no such id"
-								console.log(`Got status: ${response.statusCode} | Message: ${response.statusMessage}`);
+								log.warn(`Got status: ${response.statusCode} | Message: ${response.statusMessage}`);
 							}
 						})
-							.catch(error => {
-								log.error(`Failed to complete getItems API request\n${error}`);
-							}));
+						.catch(error => {
+							log.error(`Failed to complete getItems API request\n${error}`);
+						}));
 					}
 
 					Promise.all(allRequestPromises).then( () => {
-						console.log("Finished");
+						log.debug("Finished database setup");
 						cb(JSON.parse(data.toString())); // Pass back all the parsed tradeable ids
 					});
 				}
@@ -79,7 +79,7 @@ export function setupDatabase(cb: Function) {
 				cb(JSON.parse(data.toString())); // Pass back all the parsed tradeable ids
 			}
 		});
-	}).catch( (error) => {
+	}).catch(error => {
 		log.error(`Failed to connect to database\n${error}`);
 	});
 }
