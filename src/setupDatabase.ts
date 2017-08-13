@@ -17,18 +17,19 @@ let connect = mongoose.connect('mongodb://localhost/gw2-profiteer', {useMongoCli
 export function setupDatabase(cb: Function) {
 	connect.then( () => {
 		ItemModel.count({}, (error, count) => {
-			if (error) {
+			if (error) { // If counting Item documents fails
 				log.error(`Failed to count number of Item Documents in database\n${error}`);
 			}
 
-			if (count <= 0) { // If the database isn't already populated
-				let data = null;
-				try {
-					data = fs.readFileSync('config/itemList.json');
-				} catch (e) {
-					log.error(`Failed to read config/itemList.json\n${e}`);
-				}
+			// Load all the tradeable item ids into data
+			let data: Buffer = null;
+			try {
+				data = fs.readFileSync('config/itemList.json');
+			} catch (e) {
+				log.error(`Failed to read config/itemList.json\n${e}`);
+			}
 
+			if (count <= 0) { // If the database isn't already populated
 				if (data) { // make sure we read the data successfully
 					let parsedData = JSON.parse(data.toString());
 
@@ -38,7 +39,6 @@ export function setupDatabase(cb: Function) {
 					// Now we attempt to test if all these item ids we got are all tradeable
 					for (let idGroup of batchedIds) {
 						allRequestPromises.push(API.getItems(idGroup).then(response => {
-							// BREAKUP DATA INTO 200's AND ASYNC DO CALL
 							if (response.statusCode === 200) {
 								let items: ItemDetail[] = deserialize<ItemDetail[]>(ItemDetail, response.body);
 
@@ -71,11 +71,12 @@ export function setupDatabase(cb: Function) {
 
 					Promise.all(allRequestPromises).then( () => {
 						console.log("Finished");
-						cb();
+						cb(JSON.parse(data.toString())); // Pass back all the parsed tradeable ids
 					});
 				}
 			} else {
 				log.info("Database is already populated (with something at least)");
+				cb(JSON.parse(data.toString())); // Pass back all the parsed tradeable ids
 			}
 		});
 	}).catch( (error) => {

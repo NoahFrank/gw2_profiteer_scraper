@@ -1,6 +1,6 @@
 {
 	"appenders": {
-		"everything": { "type": "file", "filename": "log/all-the-logs.log" },
+		"everything": { "type": "file", "filename": "log/all-the-logs.log", "maxLogSize": 50000000},
 		"emergencies": {  "type": "file", "filename": "log/oh-no-not-again.log" },
 		"just-errors": { "type": "logLevelFilter", "appender": "emergencies", "level": "error" }
 	},

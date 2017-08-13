@@ -1,7 +1,6 @@
 import * as mongoose from 'mongoose';
-let Schema = mongoose.Schema;
 
-let itemSchema = new Schema({
+let itemSchema = new mongoose.Schema({
 	id: Number,
 	name: String,
 	description: String,

@@ -1,11 +1,10 @@
-export interface Stock {
+export class Stock {
 	quantity: number;
 	unit_price: number;
 }
 
-export interface Item {
+export class Item {
 	id: number;
-	whitelisted: boolean;
 	buys: Stock;
 	sells: Stock;
 }
