@@ -14,7 +14,7 @@ import ItemModel = require("./models/ItemSchema");
 
 let connect = mongoose.connect('mongodb://localhost/gw2-profiteer', {useMongoClient: true});
 
-export function setupDatabase(cb: Function) {
+export function setupDatabase(cb: (parsedIds: any) => void) {
 	connect.then( () => { // Wait for connection to database to be established
 		ItemModel.count({}, (error, count) => {
 			if (error) { // If counting Item documents fails
@@ -22,7 +22,7 @@ export function setupDatabase(cb: Function) {
 			}
 
 			// Load all the tradeable item ids into data variable
-			let data: Buffer = null;
+			let data: Buffer | undefined = undefined;
 			try {
 				data = fs.readFileSync('config/itemList.json');
 			} catch (error) {
@@ -73,6 +73,8 @@ export function setupDatabase(cb: Function) {
 						log.debug("Finished database setup");
 						cb(JSON.parse(data.toString())); // Pass back all the parsed tradeable ids
 					});
+				} else {
+					log.warn(`Failed to read config into data variable\n${data}`);
 				}
 			} else {
 				log.info("Database is already populated (with something at least)");

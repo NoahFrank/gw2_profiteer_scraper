@@ -1,7 +1,7 @@
 import {API} from './api';
 import {Item} from './DataObjects/Item';
 import {ItemListing} from './DataObjects/ItemListing';
-import ListingModel = require("./models/ListingSchema");
+import VolumeModel = require("./models/VolumeSchema");
 import PriceModel = require("./models/PriceSchema");
 import {sliceIds} from './batchRequest'
 import {deserialize} from 'serializer.ts/Serializer';
@@ -26,14 +26,48 @@ export class Scraper {
 						if (response.statusCode === 200) {
 							let listings: ItemListing[] = deserialize<ItemListing[]>(ItemListing, response.body);
 							for (let listing of listings) {
-								let newListing = new ListingModel({
-									item_id: listing.id,
-									buys: listing.buys,
-									sells: listing.sells
-								});
 
-								newListing.save().catch(error => {
-									log.error(`Failed to save new listing\n${error}`);
+								// Retrieve previous trade volume for this item from TODAY
+
+								// Get dates for today and tomorrow so we can query today's date
+								let today: Date = new Date();
+								let tomorrow: Date = new Date();
+								tomorrow.setDate(today.getDate() + 1);
+
+								// Query for this item with today's date
+								VolumeModel.findOne({
+									item_id: listing.id,
+									created_on: {"$gte": today, "$lt": tomorrow}
+								}, (error, volumeRecord: any) => {
+									if (error) { // If we can't find any previous record, create the first
+										// This could be due to a new day/first time run/or an unknown edge case
+										log.debug(`Creating volume record because failed to findOne of ${listing.id} created on ${today.toDateString()}\n${error}`);
+										VolumeModel.create({
+											item_id: listing.id,
+											bought: 0,
+											sold: 0,
+											lastListing: listing
+										}, (error: any) => {
+											if (error) log.error(`Failed to create new trade volume\n${error}`);
+										});
+									} else { // If we have a previous record, add any newly calculated data and save to database
+
+										// Calculate the trade volume differences and store in database
+										let boughtDelta: number = volumeRecord.lastListing.sumBuys() - listing.sumBuys();
+										let soldDelta: number = volumeRecord.lastListing.sumSells() - listing.sumSells();
+
+										// If below zero set to zero, negatives indicate more buy/sell orders, not trade volume
+										boughtDelta = boughtDelta < 0 ? 0 : boughtDelta;
+										soldDelta = soldDelta < 0 ? 0 : soldDelta;
+
+										volumeRecord.bought += boughtDelta;
+										volumeRecord.sold += soldDelta;
+										volumeRecord.lastListing = listing;
+
+										volumeRecord.save( (error: any) => {
+											if (error) log.error(`Failed to save new trade volume ${volumeRecord}\n${error}`);
+										});
+									}
 								});
 							}
 						}
@@ -54,8 +88,8 @@ export class Scraper {
 									sells: price.sells
 								});
 
-								newPrice.save().catch(error => {
-									log.error(`Failed to save new price\n${error}`);
+								newPrice.save(error => {
+									if (error) log.error(`Failed to save new price\n${error}`);
 								});
 							}
 						}
@@ -65,7 +99,7 @@ export class Scraper {
 				);
 			}
 
-			Promise.all(allRequestPromises).then( () => {
+			Promise.all(allRequestPromises).then(() => {
 				console.log("FINISHED SCRAPING");
 				log.info("Scrape complete");
 			})
