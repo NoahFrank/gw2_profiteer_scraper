@@ -1,6 +1,6 @@
 export * from './scraper';
-
 import {Scraper} from './scraper';
+const Promise = require('bluebird');
 
 // Init log4js
 import * as log4js from 'log4js';
@@ -11,6 +11,4 @@ let log = log4js.getLogger("index");
 
 const scrap = new Scraper();
 
-while (true) {
-	scrap.run();
-}
+scrap.run();

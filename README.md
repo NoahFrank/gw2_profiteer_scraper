@@ -21,6 +21,6 @@ in a sister project ([GW2Profiteer]() TODO LINK).
           > ```
     2. Let the program download all item ids
         - Simply do not create a `config/itemList.json` or leave it blank
-4. Start mongoDB
+4. Start mongoDB and create new database named exactly `gw2-profiteer`
 5. Start scraping all item data from itemList.json into the mongo database
 with `npm start`
