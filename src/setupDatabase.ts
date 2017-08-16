@@ -38,9 +38,8 @@ export function setupDatabase(): Promise<any> {
 						let allRequestPromises: Promise<void>[] = [];
 
 						// Now we attempt to test if all these item ids we got are all tradeable
-						console.log("Why is my debugger not triggering N");
 						for (let idGroup of batchedIds) {
-							allRequestPromises.push(API.getItems(idGroup).then(response => {
+							allRequestPromises.push(API.getItems(idGroup).then( (response: any) => {
 								if (response.statusCode === 200) {
 									let items: ItemDetail[] = deserialize<ItemDetail[]>(ItemDetail, response.body);
 
@@ -66,7 +65,7 @@ export function setupDatabase(): Promise<any> {
 									log.warn(`Got status: ${response.statusCode} | Message: ${response.statusMessage}`);
 								}
 							})
-							.catch(error => {
+							.catch( (error: any) => {
 								reject(`Failed to complete getItems API request\n${error}`);
 							}));
 						}

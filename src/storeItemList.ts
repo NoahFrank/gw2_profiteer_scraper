@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import * as got from 'got';
+let got = require('got');
 
 // Logger
 import * as log4js from 'log4js'
@@ -8,7 +8,7 @@ let log = log4js.getLogger("storeItemList");
 
 export function storeItemList(): void {
 	got.get('https://api.guildwars2.com/v2/commerce/prices', {json: true})
-		.then(response => {
+		.then( (response: any) => {
 			if (response.statusCode == 200) {
 				// Get all tradeable items
 				const data: number[] = response.body as number[];
@@ -20,7 +20,7 @@ export function storeItemList(): void {
 				log.warn(`Failed to get 200 statusCode\nStatus Code: ${response.statusCode}\nStatus Message: ${response.statusMessage}`);
 			}
 		})
-		.catch(error => {
+		.catch( (error: any) => {
 			log.error(`Failed to request all item ids\n${error}`);
 		});
 }

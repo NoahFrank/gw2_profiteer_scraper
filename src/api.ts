@@ -1,6 +1,7 @@
-import * as got from 'got';
+let got = require('got');
 
 export namespace API {
+	// TODO: Add return types
 	export function getListings(ids: number[]) {
 		return got.get(
 			`http://api.guildwars2.com/v2/commerce/listings?ids=${ids.join(',')}`,

@@ -17,93 +17,99 @@ export class Scraper {
 		console.log("Running scrape");
 		let allPromises: Promise<void>[] = [];
 
-		allPromises.push( // TODO: Change so we don't call setupDatabase to load itemList.json every single loop
-			setupDatabase().then((parsedIds) => { // Once database setup is done, get down to scraping
-				const batchedIds: number[][] = sliceIds(parsedIds);
+		// TODO: Change so we don't call setupDatabase to load itemList.json every single loop
+		// TODO: Change so we can properly return Promise without having to worry about resolutions
+		setupDatabase().then((parsedIds) => { // Once database setup is done, get down to scraping
+			const batchedIds: number[][] = sliceIds(parsedIds);
 
-				for (const idGroup of batchedIds) { // Loop through each batched set of ids
-					// Get all current item listings
-					allPromises.push(
-						API.getListings(idGroup).then(response => {
-							if (response.statusCode === 200) {
-								const listings: ItemListing[] = deserialize<ItemListing[]>(ItemListing, response.body);
-								for (const listing of listings) {
+			for (const idGroup of batchedIds) { // Loop through each batched set of ids
+				// Get all current item listings
+				allPromises.push(
+					API.getListings(idGroup).then( (response: any) => {
+						if (response.statusCode === 200) {
+							const listings: ItemListing[] = deserialize<ItemListing[]>(ItemListing, response.body);
+							for (const listing of listings) {
 
-									// Retrieve previous trade volume for this item from TODAY
+								// Retrieve previous trade volume for this item from TODAY
 
-									// Get dates for today and tomorrow so we can query today's date
-									const today: Date = new Date();
-									let tomorrow: Date = new Date();
-									tomorrow.setDate(today.getDate() + 1);
+								// Get dates for today and tomorrow so we can query today's date
+								const today: Date = new Date();
+								let tomorrow: Date = new Date();
+								tomorrow.setDate(today.getDate() + 1);
 
-									// Query for this item with today's date
-									VolumeModel.findOne({
-										item_id: listing.id,
-										created_on: {"$gte": today, "$lt": tomorrow}
-									}, (error, volumeRecord: any) => {
-										if (error) { // If we can't find any previous record, create the first
-											// This could be due to a new day/first time run/or an unknown edge case
-											log.debug(`Creating volume record because failed to findOne of ${listing.id} created on ${today.toDateString()}\n${error}`);
-											VolumeModel.create({
-												item_id: listing.id,
-												bought: 0,
-												sold: 0,
-												lastListing: listing
-											}, (error: any) => {
-												if (error) log.error(`Failed to create new trade volume\n${error}`);
-											});
-										} else { // If we have a previous record, add any newly calculated data and save to database
+								// Query for this item with today's date
+								VolumeModel.findOne({
+									item_id: listing.id,
+									created_on: {"$gte": today, "$lt": tomorrow}
+								}, (error, volumeRecord: any) => {
+									if (error) { // If we can't find any previous record, create the first
+										// This could be due to a new day/first time run/or an unknown edge case
+										log.debug(`Creating volume record because failed to findOne of ${listing.id} created on ${today.toDateString()}\n${error}`);
+										VolumeModel.create({
+											item_id: listing.id,
+											bought: 0,
+											sold: 0,
+											lastListing: {
+												buys: listing.sumBuys(),
+												sells: listing.sumSells()
+											}
+										}, (error: any) => {
+											if (error) log.error(`Failed to create new trade volume\n${error}`);
+										});
+									} else { // If we have a previous record, add any newly calculated data and save to database
+										const listingBuys: number = listing.sumBuys();
+										const listingSells: number = listing.sumSells();
 
-											// Calculate the trade volume differences and store in database
-											let boughtDelta: number = volumeRecord.lastListing.sumBuys() - listing.sumBuys();
-											let soldDelta: number = volumeRecord.lastListing.sumSells() - listing.sumSells();
+										// Calculate the trade volume differences and store in database
+										let boughtDelta: number = volumeRecord.lastListing.buys - listingBuys;
+										let soldDelta: number = volumeRecord.lastListing.sells - listingSells;
 
-											// If below zero set to zero, negatives indicate more buy/sell orders, not trade volume
-											boughtDelta = boughtDelta < 0 ? 0 : boughtDelta;
-											soldDelta = soldDelta < 0 ? 0 : soldDelta;
+										// If below zero set to zero, negatives indicate more buy/sell orders, not trade volume
+										boughtDelta = boughtDelta < 0 ? 0 : boughtDelta;
+										soldDelta = soldDelta < 0 ? 0 : soldDelta;
 
-											volumeRecord.bought += boughtDelta;
-											volumeRecord.sold += soldDelta;
-											volumeRecord.lastListing = listing;
+										volumeRecord.bought += boughtDelta;
+										volumeRecord.sold += soldDelta;
+										volumeRecord.lastListing.buys = listingBuys;
+										volumeRecord.lastListing.sells = listingSells;
 
-											volumeRecord.save( (error: any) => {
-												if (error) log.error(`Failed to save new trade volume ${volumeRecord}\n${error}`);
-											});
-										}
-									});
-								}
+										volumeRecord.save( (error: any) => {
+											if (error) log.error(`Failed to save new trade volume ${volumeRecord}\n${error}`);
+										});
+									}
+								});
 							}
-						}).catch(error => {
-							log.error(`getListings API request failed\n${error}`);
-						})
-					);
+						}
+					}).catch( (error: any) => {
+						log.error(`getListings API request failed\n${error}`);
+					})
+				);
 
-					// Get all current item prices with datetime
-					allPromises.push(
-						API.getPrices(idGroup).then(response => {
-							if (response.statusCode === 200) {
-								const prices: Item[] = deserialize<Item[]>(Item, response.body);
-								for (const price of prices) {
-									let newPrice = new PriceModel({
-										item_id: price.id,
-										buys: price.buys,
-										sells: price.sells
-									});
+				// Get all current item prices with datetime
+				allPromises.push(
+					API.getPrices(idGroup).then( (response: any) => {
+						if (response.statusCode === 200) {
+							const prices: Item[] = deserialize<Item[]>(Item, response.body);
+							for (const price of prices) {
+								let newPrice = new PriceModel({
+									item_id: price.id,
+									buys: price.buys,
+									sells: price.sells
+								});
 
-									newPrice.save(error => {
-										if (error) log.error(`Failed to save new price\n${error}`);
-									});
-								}
+								newPrice.save(error => {
+									if (error) log.error(`Failed to save new price\n${error}`);
+								});
 							}
-						}).catch(error => {
-							log.error(`getPrice API request failed\n${error}`);
-						})
-					);
-				}
-			}).catch(error => {
-				log.error(error);
-			})
-		);
+						}
+					}).catch( (error: any) => {
+						log.error(`getPrice API request failed\n${error}`);
+					})
+				);
+			}
+		}).catch(error => {
+			log.error(error);
+		});
 
 		console.log("returning promise now");
 		return new Promise( (resolve, reject) => {
